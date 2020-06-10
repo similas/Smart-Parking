@@ -14,7 +14,7 @@ topic and once every two seconds publishes a message with a counter
 import paho.mqtt.client as mqtt
 import time  # Can never get enough...
 
-MQTT_HOST = ""    # Change for your setup
+MQTT_HOST = "broker.mqtt-dashboard.com"    # Change for your setup
 MQTT_PORT = 1883  # Change for your setup
 
 
