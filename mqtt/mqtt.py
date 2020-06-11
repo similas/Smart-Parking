@@ -1,21 +1,10 @@
 #!/usr/bin/env python3
 
-'''
-Simple MQTT loopback terminal client example
-by Patrick Lloyd
-
-This simple MQTT client requires no input from the user and is used to test
-compatibility with the Mosquitto broker. It subscribes to the /loopback/hello
-topic and once every two seconds publishes a message with a counter
-'''
-
-# Library to connect with the broker
-# See http://www.eclipse.org/paho/ for more info
 import paho.mqtt.client as mqtt
 import time  # Can never get enough...
 
-MQTT_HOST = "broker.mqtt-dashboard.com"    # Change for your setup
-MQTT_PORT = 1883  # Change for your setup
+MQTT_HOST = "broker.mqtt-dashboard.com"    # Server 
+MQTT_PORT = 1883  # Port
 
 
 # The callback for when the client receives a CONNACK response from the server.
@@ -37,7 +26,7 @@ client = mqtt.Client(client_id="python-loopback")  # Create a client instance
 client.on_connect = on_connect
 client.on_message = on_message
 
-client.connect(MQTT_HOST, MQTT_PORT, 60)
+client.connect(MQTT_HOST, MQTT_PORT, 60) # Connect !
 
 # Blocking call that processes network traffic, dispatches callbacks and
 # handles reconnecting.
@@ -48,5 +37,7 @@ index = 0
 while True:
     index = index + 1
     time.sleep(2)
-    client.publish("loopback/hello", payload="Hiss... buzz... #"+str(index),
+    client.publish("EmbeddedProject/OpenDoor", payload="Sali Rocks. Doesn't it ? #"+str(index),
                    qos=0, retain=False)
+    print("Published ---> ", str(index))
+                        
