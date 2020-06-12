@@ -35,9 +35,10 @@ client.connect(MQTT_HOST, MQTT_PORT, 60) # Connect !
 client.loop_start()
 index = 0
 while True:
-    index = index + 1
+    # index = index + 1
+    publishMqtt = input("What to publish ?  : ")
     time.sleep(2)
-    client.publish("EmbeddedProject/OpenDoor", payload="Sali Rocks. Doesn't it ? #"+str(index),
+    client.publish("EmbeddedProject/OpenDoor", payload=publishMqtt,
                    qos=0, retain=False)
     print("Published ---> ", str(index))
                         

@@ -25,12 +25,17 @@
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
+#include <Servo.h>
+
+Servo myservo;
 
 // Update these with values suitable for your network.
 
-const char* ssid = "Sadaf's iphone";
-const char* password = "qjnhqornqwss0";
+const char* ssid = "Pesarak";
+const char* password = "hashttahaft";
 const char* mqtt_server = "broker.mqtt-dashboard.com";// "192.168.43.12";//"iot.eclipse.org"; //"broker.mqtt-dashboard.com";
+
+static const int servoPin = 2;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -70,6 +75,15 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.print((char)payload[i]);
   }
   Serial.println();
+  if((char)payload[0]=='1')
+  {
+      Serial.println("open the door mr pitch");
+      myservo.write(100);
+  }
+  else {
+      Serial.println("Don't open the door");
+      myservo.write(0);
+  }
 
 
 
@@ -101,6 +115,7 @@ void reconnect() {
 
 void setup() {
   Serial.begin(9600);
+  myservo.attach(servoPin);
   setup_wifi();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
