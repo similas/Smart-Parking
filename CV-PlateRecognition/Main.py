@@ -36,31 +36,32 @@ SCALAR_RED = (0.0, 0.0, 255.0)
 showSteps = False
 
 ###################################################################################################
-def main():
+def PlateRecognizer(imgPath):
 
     blnKNNTrainingSuccessful = DetectChars.loadKNNDataAndTrainKNN()         # attempt KNN training
 
     if blnKNNTrainingSuccessful == False:                               # if KNN training was not successful
         print("\nerror: KNN traning was not successful\n")  # show error message
-        return                                                          # and exit program
+        return "KNN-ERROR"                                                         # and exit program
     # end if
 
-    imgOriginalScene  = cv2.imread("ir5.png")               # open image
+    imgOriginalScene  = cv2.imread(imgPath)               # open image
 
     if imgOriginalScene is None:                            # if image was not read successfully
         print("\nerror: image not read from file \n\n")  # print error message to std out
-        os.system("pause")                                  # pause so user can see error message
-        return                                              # and exit program
+        # os.system("pause")                                  # pause so user can see error message
+        return "IMG-ERROR"                                            # and exit program
     # end if
 
     listOfPossiblePlates = DetectPlates.detectPlatesInScene(imgOriginalScene)           # detect plates
 
     listOfPossiblePlates = DetectChars.detectCharsInPlates(listOfPossiblePlates)        # detect chars in plates
 
-    cv2.imshow("imgOriginalScene", imgOriginalScene)            # show scene image
+    # cv2.imshow("imgOriginalScene", imgOriginalScene)            # show scene image
 
     if len(listOfPossiblePlates) == 0:                          # if no plates were found
         print("\nno license plates were detected\n")  # inform user no plates were found
+        return "NO-LICENSE-PLATE"
     else:                                                       # else
                 # if we get in here list of possible plates has at leat one plate
 
@@ -75,13 +76,14 @@ def main():
 
         if len(licPlate.strChars) == 0:                     # if no chars were found in the plate
             print("\nno characters were detected\n\n")  # show message
-            return                                          # and exit program
+            return "NO-CHARS-IN-PLATE"                                       # and exit program
         # end if
 
         drawRedRectangleAroundPlate(imgOriginalScene, licPlate)             # draw red rectangle around plate
 
         print("\nlicense plate read from image = " + licPlate.strChars + "\n")  # write license plate text to std out
         print("----------------------------------------")
+        result = "DETECTED-" + licPlate.strChars 
 
         writeLicensePlateCharsOnImage(imgOriginalScene, licPlate)           # write license plate text on the image
 
@@ -93,10 +95,10 @@ def main():
 
     cv2.waitKey(0)					# hold windows open until user presses a key
 
-    return
+    return result
 
 ###################################################################################################
-def ImageCaptureFromWebCam():
+def RealTimePlateRecognizer():
     cam = cv2.VideoCapture(0)
 
     cv2.namedWindow("Smart Parking")
@@ -117,15 +119,17 @@ def ImageCaptureFromWebCam():
         # elif k%256 == 32: capturing image by space
             # SPACE pressed
         img_name = "capturedFrames/CarVidCap_{}.png".format(img_counter)
+
         now = time.time()
         sub = now - prevCapTime
-        if  sub >= 5:
+        if  sub >= 1:
             img_counter += 1
             cv2.imwrite(img_name, frame)
             prevCapTime = time.time()
             # print(img_name + "-capped"," has been captured !!!!")
             pubstr = f"{img_name}-capped has been captured !!!!"
-            mqttPublish(pubstr)
+            result = PlateRecognizer(img_name)
+            mqttPublish(result)
             print("Cap time is :      ", sub)
         
     cam.release()
@@ -189,7 +193,7 @@ def mqttPublish(sth):
 ###################################################################################################
 
 if __name__ == "__main__":
-	ImageCaptureFromWebCam()
+	RealTimePlateRecognizer()
     # mqttPublish("Man alive this thing's fantastic :))))11")
     # main()
 
