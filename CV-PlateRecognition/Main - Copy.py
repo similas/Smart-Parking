@@ -1,32 +1,21 @@
 import cv2
-import time  # Can never get enough...
-import os
-import threading
 import numpy as np
+import os
 import DetectChars
 import DetectPlates
 import PossiblePlate
 import paho.mqtt.client as mqtt
+import time  # Can never get enough...
 
-from publisher_mqtt import *
 
 # MQTT Setup ######################################################################################
+
 
 MQTT_HOST = "broker.mqtt-dashboard.com"    # Server 
 MQTT_PORT = 1883  # Port
 
-client = mqtt.Client(client_id="python-loopback")  # Create a client instance
-
-# Callback declarations
-client.on_connect = on_connect
-client.on_message = on_message
-
-client.connect(MQTT_HOST, MQTT_PORT, 60) # Connect !
-
-mindex = 0
 
 # module level variables ##########################################################################
-
 SCALAR_BLACK = (0.0, 0.0, 0.0)
 SCALAR_WHITE = (255.0, 255.0, 255.0)
 SCALAR_YELLOW = (0.0, 255.0, 255.0)
@@ -94,42 +83,7 @@ def main():
     cv2.waitKey(0)					# hold windows open until user presses a key
 
     return
-
-###################################################################################################
-def ImageCaptureFromWebCam():
-    cam = cv2.VideoCapture(0)
-
-    cv2.namedWindow("Smart Parking")
-
-    img_counter = 0
-    prevCapTime = 0
-    while True:
-        ret, frame = cam.read()
-        if not ret:
-            print("failed to grab frame")
-            break
-        cv2.imshow("Smart Parking", frame)
-        k = cv2.waitKey(1)
-        if k%256 == 27:
-            # ESC pressed
-            print("Escape hit, closing...")
-            break
-        # elif k%256 == 32: capturing image by space
-            # SPACE pressed
-        img_name = "capturedFrames/CarVidCap_{}.png".format(img_counter)
-        now = time.time()
-        sub = now - prevCapTime
-        if  sub >= 5:
-            img_counter += 1
-            cv2.imwrite(img_name, frame)
-            prevCapTime = time.time()
-            # print(img_name + "-capped"," has been captured !!!!")
-            pubstr = f"{img_name}-capped has been captured !!!!"
-            mqttPublish(pubstr)
-            print("Cap time is :      ", sub)
-        
-    cam.release()
-    cv2.destroyAllWindows()
+# end main
 
 ###################################################################################################
 def drawRedRectangleAroundPlate(imgOriginalScene, licPlate):
@@ -140,6 +94,7 @@ def drawRedRectangleAroundPlate(imgOriginalScene, licPlate):
     cv2.line(imgOriginalScene, tuple(p2fRectPoints[1]), tuple(p2fRectPoints[2]), SCALAR_RED, 2)
     cv2.line(imgOriginalScene, tuple(p2fRectPoints[2]), tuple(p2fRectPoints[3]), SCALAR_RED, 2)
     cv2.line(imgOriginalScene, tuple(p2fRectPoints[3]), tuple(p2fRectPoints[0]), SCALAR_RED, 2)
+# end function
 
 ###################################################################################################
 def writeLicensePlateCharsOnImage(imgOriginalScene, licPlate):
@@ -179,17 +134,47 @@ def writeLicensePlateCharsOnImage(imgOriginalScene, licPlate):
 
             # write the text on the image
     cv2.putText(imgOriginalScene, licPlate.strChars, (ptLowerLeftTextOriginX, ptLowerLeftTextOriginY), intFontFace, fltFontScale, SCALAR_YELLOW, intFontThickness)
+# end function
 
+# MQTT FUNCTIONS
 ###################################################################################################
+def on_connect(client, userdata, rc):
+    print("Connected with result code "+str(rc))
+    #Subscribing in on_connect() means that if we lose the connection and
+    # reconnect then subscriptions will be renewed.
+    client.subscribe("loopback/hello")
+
+# The callback for when a PUBLISH message is received from the server.
+def on_message(client, userdata, msg):
+    print(msg.topic+": "+str(msg.payload))
+
 def mqttPublish(sth):
     global client
     print("here")
     client.publish("EmbeddedProject/OpenDoor", payload=sth,
                 qos=0, retain=False)
-###################################################################################################
 
+
+client = mqtt.Client(client_id="python-loopback")  # Create a client instance
+
+# Callback declarations
+client.on_connect = on_connect
+client.on_message = on_message
+
+client.connect(MQTT_HOST, MQTT_PORT, 60) # Connect !
+
+# Blocking call that processes network traffic, dispatches callbacks and
+# handles reconnecting.
+# Other loop*() functions are available that give a threaded interface and a
+# manual interface.
+
+
+# client.loop_start()   DO WE WANT LOOP ??
+mindex = 0
+###################################################################################################
 if __name__ == "__main__":
-	ImageCaptureFromWebCam()
-    # mqttPublish("Man alive this thing's fantastic :))))11")
+ 	mqttPublish("Man alive this thing's fantastic")
+	# while True:
+		# time.sleep(2)
     # main()
 
