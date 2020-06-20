@@ -87,13 +87,13 @@ def PlateRecognizer(imgPath):
 
         writeLicensePlateCharsOnImage(imgOriginalScene, licPlate)           # write license plate text on the image
 
-        cv2.imshow("imgOriginalScene", imgOriginalScene)                # re-show scene image
+        # cv2.imshow("imgOriginalScene", imgOriginalScene)                # re-show scene image
 
-        cv2.imwrite("imgOriginalScene.png", imgOriginalScene)           # write image out to file
+        # cv2.imwrite("imgOriginalScene.png", imgOriginalScene)           # write image out to file
 
     # end if else
 
-    cv2.waitKey(0)					# hold windows open until user presses a key
+    # cv2.waitKey(0)					# hold windows open until user presses a key
 
     return result
 
@@ -122,15 +122,23 @@ def RealTimePlateRecognizer():
 
         now = time.time()
         sub = now - prevCapTime
-        if  sub >= 1:
+        if  sub >= 4:
             img_counter += 1
             cv2.imwrite(img_name, frame)
             prevCapTime = time.time()
             # print(img_name + "-capped"," has been captured !!!!")
             pubstr = f"{img_name}-capped has been captured !!!!"
             result = PlateRecognizer(img_name)
-            mqttPublish(result)
-            print("Cap time is :      ", sub)
+            if "DETECT" in result:
+            	with open("Plates.txt", 'a') as platesfile:
+            		platesfile.write(result)
+            		platesfile.write("\n")
+            	mqttPublish("1" + result)
+            	print(result)
+            	print("---------")            	
+            else:
+            	mqttPublish(result)
+            # print("Cap time is :      ", sub)
         
     cam.release()
     cv2.destroyAllWindows()
