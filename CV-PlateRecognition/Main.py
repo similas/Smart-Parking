@@ -24,7 +24,7 @@ client.on_message = on_message
 client.connect(MQTT_HOST, MQTT_PORT, 60) # Connect !
 
 mindex = 0
-
+index = 0
 # module level variables ##########################################################################
 
 SCALAR_BLACK = (0.0, 0.0, 0.0)
@@ -81,7 +81,7 @@ def PlateRecognizer(imgPath):
 
         drawRedRectangleAroundPlate(imgOriginalScene, licPlate)             # draw red rectangle around plate
 
-        print("\nlicense plate read from image = " + licPlate.strChars + "\n")  # write license plate text to std out
+        print("\nLicense Plate read from image = " + licPlate.strChars + "\n")  # write license plate text to std out
         print("----------------------------------------")
         result = "DETECTED-" + licPlate.strChars 
 
@@ -105,7 +105,8 @@ def RealTimePlateRecognizer():
 
     img_counter = 0
     prevCapTime = 0
-    while True:
+    client.loop_start()
+    while True:    	
         ret, frame = cam.read()
         if not ret:
             print("failed to grab frame")
@@ -122,7 +123,11 @@ def RealTimePlateRecognizer():
 
         now = time.time()
         sub = now - prevCapTime
-        if  sub >= 4:
+        if  sub >= 2:
+            # mqttPublish("2")
+            print()
+            print("*" * 100)
+            print("*" * 100)
             img_counter += 1
             cv2.imwrite(img_name, frame)
             prevCapTime = time.time()
@@ -130,16 +135,25 @@ def RealTimePlateRecognizer():
             pubstr = f"{img_name}-capped has been captured !!!!"
             result = PlateRecognizer(img_name)
             if "DETECT" in result:
-            	with open("Plates.txt", 'a') as platesfile:
-            		platesfile.write(result)
-            		platesfile.write("\n")
-            	mqttPublish("1" + result)
-            	print(result)
-            	print("---------")            	
+            	# with open("Plates.txt", 'a') as platesfile:
+            	# 	platesfile.write(result)
+            	# 	platesfile.write("\n")
+            	if ("17" in result ) or ("37" in result):
+            		print(result)
+            		print("== Granted Entrance ==")
+            		print()
+            		mqttPublish("1" + "Granted Entrance")
+            	else:
+            		print("== Unauthorized Entrance ==")
+            		print()
+            		mqttPublish("Unauthorized Entrance")
             else:
             	mqttPublish(result)
             # print("Cap time is :      ", sub)
-        
+            print("*" * 100)
+            print("*" * 100)
+            print()
+
     cam.release()
     cv2.destroyAllWindows()
 
@@ -195,9 +209,9 @@ def writeLicensePlateCharsOnImage(imgOriginalScene, licPlate):
 ###################################################################################################
 def mqttPublish(sth):
     global client
-    print("here")
     client.publish("EmbeddedProject/OpenDoor", payload=sth,
                 qos=0, retain=False)
+    print(f"--- {sth} published to 'EmbeddedProject/OpenDoor' ---")
 ###################################################################################################
 
 if __name__ == "__main__":
